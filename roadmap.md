@@ -1,5 +1,10 @@
 # Roadmap
 
+- [ ] Restore hierarchical left sidebar and complete original overview.
+- [ ] Add email-confirmed SaaS registration, 3-day trials, isolated persistent store data.
+- [ ] Add secure platform customer management, status changes and renewal.
+- [ ] Verify registration/tenant flows and navigation; note external auth blockers.
+
 - [x] Remove Chấm công from the product shell.
 - [x] Add ingredient, recipe, and stocktake management views.
 - [x] Add POS cart and K80/K57 browser print flow.

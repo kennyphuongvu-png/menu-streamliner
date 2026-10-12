@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture
+
+- Keep the public landing at / and the existing product shell at /dashboard with local component state only; the landing entry navigates directly without authentication because this milestone is interface-only.
+- Print styles must isolate the active print area and remove transformed, clipped, or positioned ancestor layouts; named pages select A4 stocktake without changing thermal receipt sizing.

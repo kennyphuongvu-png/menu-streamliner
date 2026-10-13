@@ -37,7 +37,7 @@ function SignupPage() {
     setBusy(true); setErr("");
     try {
       await register({ data: v });
-      const { error } = await supabase.auth.signInWithPassword({ email: v.email!.trim().toLowerCase(), password: v.password! });
+      const { error } = await supabase.auth.signInWithPassword({ email: v["email"]!.trim().toLowerCase(), password: v["password"]! });
       if (error) throw error;
       navigate({ to: "/dashboard" });
     } catch (x) {

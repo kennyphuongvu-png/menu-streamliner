@@ -78,8 +78,10 @@ type Store = {
 
 const Ctx = createContext<Store | null>(null);
 
-export function FnbProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<FnbData>(() => ({ ingredients: seedIngredients, preps: seedPreps, recipes: seedRecipes, movements: seedMovements, sales: seedSales() }));
+export function FnbProvider({ children, empty = false }: { children: ReactNode; empty?: boolean }) {
+  const [data, setData] = useState<FnbData>(() => empty
+    ? { ingredients: [], preps: [], recipes: [], movements: [], sales: [] }
+    : { ingredients: seedIngredients, preps: seedPreps, recipes: seedRecipes, movements: seedMovements, sales: seedSales() });
   const store = useMemo<Store>(() => {
     const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
     return {

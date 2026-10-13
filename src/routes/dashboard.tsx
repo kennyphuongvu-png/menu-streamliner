@@ -42,7 +42,7 @@ function useSessionInfo(): Session {
         supabase.from("stores").select("id,name,status,trial_ends_at").eq("owner_id", user.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
       ]);
-      setS({ loading: false, userId: user.id, name: (user.user_metadata?.full_name as string) ?? user.email, store: store as Store | null, superAdmin: !!roles?.some((r) => r.role === "super_admin") });
+      setS({ loading: false, userId: user.id, name: (user.user_metadata?.["full_name"] as string) ?? user.email, store: store as Store | null, superAdmin: !!roles?.some((r) => r.role === "super_admin") });
     })();
   }, []);
   return s;

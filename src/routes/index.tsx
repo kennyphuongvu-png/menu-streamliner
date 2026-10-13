@@ -45,7 +45,10 @@ function LandingPage() {
               <h1 className="max-w-[620px] font-display text-4xl font-bold leading-[1.15] sm:text-5xl lg:text-6xl">Quản lý quán F&B<br className="hidden sm:block" /> từ kho đến<br className="hidden lg:block" /> lợi nhuận</h1>
               <p className="mt-6 max-w-[460px] text-base leading-7 text-landing-foreground/80">Quản lý nguyên liệu, chuẩn hóa công thức và theo dõi hiệu quả kinh doanh. Để bạn dành nhiều thời gian hơn cho từng ly ngon và khách hàng.</p>
               <Button asChild className="mt-8 h-12 gap-3 bg-landing-action px-6 text-base text-landing-action-foreground hover:bg-landing-action/90 focus-visible:ring-landing-action">
-                <Link to="/dashboard"><ArrowRight className="size-5" /> Đăng nhập</Link>
+                <Link to="/signup"><ArrowRight className="size-5" /> Tạo cửa hàng ngay</Link>
+              </Button>
+              <Button asChild variant="outline" className="ml-3 mt-8 h-12 px-6 text-base">
+                <Link to="/auth">Đăng nhập</Link>
               </Button>
             </div>
           </div>

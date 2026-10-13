@@ -14,16 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          store_id: string | null
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          store_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          store_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_members_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          activated_at: string | null
+          business_field: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          owner_id: string
+          owner_name: string
+          phone: string
+          status: Database["public"]["Enums"]["store_status"]
+          trial_ends_at: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          business_field: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          owner_id: string
+          owner_name: string
+          phone: string
+          status?: Database["public"]["Enums"]["store_status"]
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          business_field?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          owner_name?: string
+          phone?: string
+          status?: Database["public"]["Enums"]["store_status"]
+          trial_ends_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin"
+      store_status: "trial" | "active" | "locked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +286,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin"],
+      store_status: ["trial", "active", "locked"],
+    },
   },
 } as const

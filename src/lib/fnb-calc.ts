@@ -13,7 +13,7 @@ export type Recipe = {
   items: RecipeItem[]; brewTime: string; tools: string; steps: { text: string; image?: string }[]; active: boolean;
 };
 export type MovementKind = "in" | "out" | "sale";
-export type Movement = { id: string; date: string; targetKind: "ing" | "prep"; targetId: string; kind: MovementKind; qty: number; note: string };
+export type Movement = { id: string; date: string; targetKind: "ing" | "prep"; targetId: string; kind: MovementKind; qty: number; note: string; slipId?: string; unitCost?: number };
 export type PayMethod = "cash" | "transfer" | "ewallet";
 export type SaleLine = { recipeId: string; name: string; qty: number; price: number; cost: number };
 export type Sale = { id: string; number: string; date: string; lines: SaleLine[]; total: number; cogs: number; method: PayMethod; subtotal?: number; discount?: number };

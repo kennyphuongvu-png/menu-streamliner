@@ -1,14 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
-  BarChart3, Bell, Boxes, ChefHat, ClipboardCheck, ClipboardList, FileSpreadsheet, LayoutGrid, Lock, LogOut,
-  PackageCheck, Settings, ShieldCheck, ShoppingCart, Sparkles, Target, Trash2, TriangleAlert, Utensils,
+  BarChart3, Bell, Boxes, ChefHat, ChevronDown, ClipboardCheck, ClipboardList, FileSpreadsheet, LayoutGrid, Lock, LogOut, Menu,
+  PackageCheck, Settings, ShieldCheck, ShoppingCart, Target, Trash2, TriangleAlert, Utensils,
 } from "lucide-react";
 import { useEffect, useState, type ComponentType } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CogsSection, IngredientsSection, PnlSection, PosSection, PrepsSection, RecipesSection, StocktakeSection } from "@/components/fnb-sections";
 import { EndOfDaySection, SettingsSection, SuperAdminSection } from "@/components/fnb-admin-sections";
-import { ForecastSection } from "@/components/forecast-section";
+import { StockSlipsSection } from "@/components/stock-slips-section";
+import { RecipeFormulasSection } from "@/components/recipe-formulas-section";
 import { NotificationBell, SaasCustomersSection, useAdminNotifications } from "@/components/saas-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { recipeCost, vnd } from "@/lib/fnb-calc";
@@ -68,13 +70,13 @@ function Shell({ s }: { s: Session }) {
     { label: "Tổng quan", icon: LayoutGrid, item: { key: "overview", label: "Tổng quan", icon: LayoutGrid, view: () => <Overview s={s} /> } },
     { label: "Nguyên liệu & Kho", icon: Boxes, children: [
       { key: "ing", label: "Nguyên liệu", icon: Boxes, view: IngredientsSection },
-      { key: "slip", label: "Phiếu kho", icon: ClipboardCheck, view: StocktakeSection },
+      { key: "slip", label: "Phiếu kho", icon: ClipboardCheck, view: StockSlipsSection },
       { key: "count", label: "Kiểm kê kho", icon: ClipboardList, view: StocktakeSection },
     ] },
     { label: "Bán thành phẩm", icon: PackageCheck, item: { key: "preps", label: "Bán thành phẩm", icon: PackageCheck, view: PrepsSection } },
     { label: "Món & Công thức", icon: ChefHat, children: [
       { key: "goods", label: "Hàng hóa", icon: Utensils, view: RecipesSection },
-      { key: "recipes", label: "Công thức", icon: ChefHat, view: RecipesSection },
+      { key: "recipes", label: "Công thức", icon: ChefHat, view: RecipeFormulasSection },
     ] },
     { label: "Bảng giá vốn (COGS)", icon: FileSpreadsheet, item: { key: "cogs", label: "Bảng giá vốn (COGS)", icon: FileSpreadsheet, view: CogsSection, premium: true } },
     { label: "Doanh thu & Lãi lỗ", icon: BarChart3, children: [
@@ -83,14 +85,16 @@ function Shell({ s }: { s: Session }) {
     ] },
     { label: "Bán hàng", icon: ShoppingCart, item: { key: "pos", label: "Bán hàng", icon: ShoppingCart, view: PosSection } },
     { label: "Cài đặt", icon: Settings, item: { key: "settings", label: "Cài đặt", icon: Settings, view: SettingsSection } },
-    { label: "Dự báo chuẩn bị (AI)", icon: Sparkles, item: { key: "ai", label: "Dự báo chuẩn bị (AI)", icon: Sparkles, view: ForecastSection, premium: true, badge: "AI" } },
     ...(s.superAdmin || !s.userId ? [{ label: "Super Admin", icon: ShieldCheck, item: { key: "super", label: "Super Admin", icon: ShieldCheck, view: s.superAdmin ? SuperAdminFull : SuperAdminSection } }] : []),
   ];
-  const all = groups.flatMap((g) => g.children ?? [g.item!]);
+  const all = groups.flatMap((g) => g.children ?? (g.item ? [g.item] : []));
   const [active, setActive] = useState("overview");
-  const current = all.find((i) => i.key === active) ?? all[0]!;
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const current = all.find((i) => i.key === active) ?? all[0];
+  if (!current) return null;
   const trial = s.store?.status === "trial";
-  const expired = trial && new Date(s.store!.trial_ends_at).getTime() < Date.now();
+  const expired = trial && !!s.store && new Date(s.store.trial_ends_at).getTime() < Date.now();
   const locked = s.store?.status === "locked" || expired;
   const gated = trial && current.premium;
   const View = current.view;
@@ -98,12 +102,23 @@ function Shell({ s }: { s: Session }) {
   const logout = async () => { await supabase.auth.signOut(); navigate({ to: "/" }); };
 
   const NavBtn = ({ it, sub }: { it: Item; sub?: boolean }) => (
-    <button onClick={() => setActive(it.key)} className={cn("flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors", sub && "pl-9 text-[13px]", active === it.key ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}>
+    <Button variant="ghost" aria-current={active === it.key ? "page" : undefined} onClick={() => { setActive(it.key); setMobileOpen(false); }} className={cn("h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2 text-left text-sm font-medium", sub && "pl-9 text-[13px]", active === it.key ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}>
       <it.icon className="size-4 shrink-0" /><span className="flex-1">{it.label}</span>
       {it.badge && <span className="rounded bg-sidebar-accent px-1.5 text-[10px] font-bold">{it.badge}</span>}
       {trial && it.premium && <Lock className="size-3.5 opacity-70" />}
-    </button>
+    </Button>
   );
+
+  const navigation = () => <nav aria-label="Điều hướng chính" className="mt-2 space-y-1">
+    {groups.map((g) => g.item ? <NavBtn key={g.label} it={g.item} /> : (
+      <div key={g.label}>
+        <Button variant="ghost" aria-expanded={!!expanded[g.label]} aria-controls={`nav-${g.children?.[0]?.key}`} onClick={() => setExpanded((e) => ({ ...e, [g.label]: !e[g.label] }))} className={cn("h-auto min-h-10 w-full justify-start gap-3 whitespace-normal px-3 py-2 text-left text-sm", g.children?.some((c) => c.key === active) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/85", "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}>
+          <g.icon className="size-4 shrink-0" /><span className="flex-1">{g.label}</span><ChevronDown className={cn("size-4 shrink-0 transition-transform motion-reduce:transition-none", expanded[g.label] && "rotate-180")} />
+        </Button>
+        {expanded[g.label] && <div id={`nav-${g.children?.[0]?.key}`} className="mt-1 space-y-1">{g.children?.map((c) => <NavBtn key={c.key} it={c} sub />)}</div>}
+      </div>
+    ))}
+  </nav>;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -111,21 +126,12 @@ function Shell({ s }: { s: Session }) {
         <Link to="/" className="px-3 font-display text-2xl font-bold">Fumi<span className="text-sidebar-primary">Go</span></Link>
         <p className="mt-1 truncate px-3 text-sm opacity-80">{s.store?.name ?? "FUGUMI CRAFT"}</p>
         <p className="mt-6 px-3 text-[11px] font-bold uppercase tracking-[0.16em] opacity-60">Vận hành cửa hàng</p>
-        <nav aria-label="Điều hướng chính" className="mt-2 space-y-1">
-          {groups.map((g) => g.item ? <NavBtn key={g.label} it={g.item} /> : (
-            <div key={g.label}>
-              <p className="flex items-center gap-3 px-3 pb-1 pt-2 text-sm font-semibold"><g.icon className="size-4" />{g.label}</p>
-              {g.children!.map((c) => <NavBtn key={c.key} it={c} sub />)}
-            </div>
-          ))}
-        </nav>
+        {navigation()}
       </aside>
 
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur md:px-8">
-          <select aria-label="Chọn mục" className="rounded-md border border-input bg-background px-2 py-1.5 text-sm md:hidden" value={active} onChange={(e) => setActive(e.target.value)}>
-            {all.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}
-          </select>
+          <div className="flex min-w-0 items-center gap-2 md:hidden"><Button variant="ghost" size="icon" aria-label="Mở menu" onClick={() => setMobileOpen(true)}><Menu className="size-5" /></Button><p className="truncate text-sm font-semibold">{current.label}</p></div>
           <p className="hidden truncate font-display text-lg font-bold md:block">{s.store?.name ?? "FUGUMI CRAFT"}</p>
           <div className="flex items-center gap-2">
             {s.name && <span className="hidden text-sm font-medium sm:block">{s.name}</span>}
@@ -139,7 +145,7 @@ function Shell({ s }: { s: Session }) {
 
         {trial && !locked && (
           <div className="border-b border-border bg-warning-soft px-4 py-2 text-sm text-warning md:px-8">
-            Đang dùng thử giới hạn đến {new Date(s.store!.trial_ends_at).toLocaleString("vi-VN")} — chờ quản trị viên kích hoạt chính thức để mở khóa đầy đủ tính năng.
+            Đang dùng thử giới hạn đến {s.store && new Date(s.store.trial_ends_at).toLocaleString("vi-VN")} — chờ quản trị viên kích hoạt chính thức để mở khóa đầy đủ tính năng.
           </div>
         )}
 
@@ -152,6 +158,7 @@ function Shell({ s }: { s: Session }) {
           ) : <View />}
         </main>
       </div>
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}><DialogContent className="fixed inset-y-0 left-0 top-0 h-dvh max-h-dvh w-72 max-w-[90vw] translate-x-0 translate-y-0 overflow-y-auto rounded-none border-sidebar-border bg-sidebar p-3 text-sidebar-foreground"><DialogHeader className="px-3 pt-3 text-left"><DialogTitle>Vận hành cửa hàng</DialogTitle></DialogHeader>{navigation()}</DialogContent></Dialog>
     </div>
   );
 }

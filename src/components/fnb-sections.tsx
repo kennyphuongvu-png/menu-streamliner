@@ -129,7 +129,7 @@ export function RecipesSection() {
   const toggleSel = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   return (
     <section className="animate-rise-in space-y-5">
-      <PageIntro title="Món & Công thức" description="Menu, định lượng, giá vốn tự tính và SOP pha chế." />
+      <PageIntro title="Hàng hóa" description="Danh sách món và giá bán." />
       <div className="no-print flex flex-col gap-3 rounded-md border border-border bg-card px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <InactiveToggle checked={showInactive} onChange={setShowInactive} />
         <div className="flex flex-wrap gap-2">

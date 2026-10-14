@@ -1,6 +1,11 @@
 # Roadmap
 
-- [ ] Restore hierarchical left sidebar and complete original overview.
+- [x] Convert sidebar groups to collapsed dropdowns with the requested main items.
+- [x] Separate stock slips from the unchanged stocktake screen; support creating slips.
+- [x] Keep goods listing and add a separate editable formula/cost screen.
+- [x] Verify dropdowns, slip creation, formula save/read-back, and narrow layouts in the public local-session shell; authenticated checks unavailable with external unmanaged auth.
+
+- [x] Restore hierarchical left sidebar and complete original overview.
 - [ ] Add email-confirmed SaaS registration, 3-day trials, isolated persistent store data.
 - [ ] Add secure platform customer management, status changes and renewal.
 - [ ] Verify registration/tenant flows and navigation; note external auth blockers.

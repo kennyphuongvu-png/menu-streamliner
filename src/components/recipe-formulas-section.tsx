@@ -12,7 +12,7 @@ export function RecipeFormulasSection() {
   const recipe = data.recipes.find((r) => r.id === selected);
   return <section className="animate-rise-in space-y-5">
     <h2 className="font-display text-2xl font-bold">Công thức</h2>
-    <Field label="Chọn món" className="max-w-md"><select className={inputCls} value={selected} onChange={(e) => setSelected(e.target.value)}><option value="">Chọn món cần định lượng</option>{data.recipes.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.size}{!r.active && " (Đã ẩn)"}</option>)}</select></Field>
+    <Field label="Chọn món" className="max-w-md"><select aria-label="Chọn món" className={inputCls} value={selected} onChange={(e) => setSelected(e.target.value)}><option value="">Chọn món cần định lượng</option>{data.recipes.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.size}{!r.active && " (Đã ẩn)"}</option>)}</select></Field>
     {!data.recipes.length && <p className="text-sm text-muted-foreground">Chưa có món.</p>}
     {recipe && <FormulaEditor key={recipe.id} recipe={recipe} />}
   </section>;

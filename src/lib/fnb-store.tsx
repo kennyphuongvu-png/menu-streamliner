@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
 import { applySale, recipeCost, uid, type FnbData, type Ingredient, type Movement, type PayMethod, type Prep, type Recipe, type Sale } from "./fnb-calc";
+import { DEFAULT_INGREDIENT_GROUPS, DEFAULT_RECIPE_GROUPS, ingredientGroup, recipeGroup } from "./fnb-groups";
 
 export const INGREDIENT_CATEGORIES = ["Trái cây tươi", "Cà phê", "Matcha", "Mứt", "Syrup", "Bánh", "Bao bì", "Khác"];
 
@@ -66,6 +67,11 @@ const seedMovements: Movement[] = [
 
 type Store = {
   data: FnbData;
+  ingredientGroups: string[];
+  recipeGroups: string[];
+  addGroup: (kind: "ingredient" | "recipe", name: string) => void;
+  renameGroup: (kind: "ingredient" | "recipe", from: string, to: string) => void;
+  deleteGroup: (kind: "ingredient" | "recipe", name: string) => void;
   upsertIngredient: (i: Ingredient) => void;
   upsertPrep: (p: Prep) => void;
   upsertRecipe: (r: Recipe) => void;
@@ -81,11 +87,33 @@ const Ctx = createContext<Store | null>(null);
 export function FnbProvider({ children, empty = false }: { children: ReactNode; empty?: boolean }) {
   const [data, setData] = useState<FnbData>(() => empty
     ? { ingredients: [], preps: [], recipes: [], movements: [], sales: [] }
-    : { ingredients: seedIngredients, preps: seedPreps, recipes: seedRecipes, movements: seedMovements, sales: seedSales() });
+    : { ingredients: seedIngredients, preps: seedPreps, recipes: seedRecipes.map((r) => ({ ...r, group: recipeGroup(r.group, r.name) })), movements: seedMovements, sales: seedSales() });
+  const [ingredientGroups, setIngredientGroups] = useState(DEFAULT_INGREDIENT_GROUPS);
+  const [recipeGroups, setRecipeGroups] = useState(DEFAULT_RECIPE_GROUPS);
   const store = useMemo<Store>(() => {
     const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item]);
     return {
       data,
+      ingredientGroups: [...new Set([...ingredientGroups, ...data.ingredients.map(ingredientGroup)])],
+      recipeGroups: [...new Set([...recipeGroups, ...data.recipes.map((r) => r.group)])],
+      addGroup: (kind, name) => {
+        const setter = kind === "ingredient" ? setIngredientGroups : setRecipeGroups;
+        setter((groups) => [...new Set([...groups, name])]);
+      },
+      renameGroup: (kind, from, to) => {
+        const setter = kind === "ingredient" ? setIngredientGroups : setRecipeGroups;
+        setter((groups) => [...new Set([...groups.map((g) => g === from ? to : g), to])]);
+        setData((d) => kind === "ingredient"
+          ? { ...d, ingredients: d.ingredients.map((i) => ingredientGroup(i) === from ? { ...i, subcategory: to } : i) }
+          : { ...d, recipes: d.recipes.map((r) => r.group === from ? { ...r, group: to } : r) });
+      },
+      deleteGroup: (kind, name) => {
+        const setter = kind === "ingredient" ? setIngredientGroups : setRecipeGroups;
+        setter((groups) => groups.filter((g) => g !== name));
+        setData((d) => kind === "ingredient"
+          ? { ...d, ingredients: d.ingredients.map((i) => ingredientGroup(i) === name ? { ...i, subcategory: "Khác" } : i) }
+          : { ...d, recipes: d.recipes.map((r) => r.group === name ? { ...r, group: "Khác" } : r) });
+      },
       upsertIngredient: (i) => setData((d) => ({ ...d, ingredients: upsert(d.ingredients, i) })),
       upsertPrep: (p) => setData((d) => ({ ...d, preps: upsert(d.preps, p) })),
       upsertRecipe: (r) => setData((d) => ({ ...d, recipes: upsert(d.recipes, r) })),
@@ -121,7 +149,7 @@ export function FnbProvider({ children, empty = false }: { children: ReactNode; 
         return next.sales[next.sales.length - 1];
       },
     };
-  }, [data]);
+  }, [data, ingredientGroups, recipeGroups]);
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
 

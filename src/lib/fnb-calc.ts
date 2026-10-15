@@ -1,5 +1,5 @@
 export type Ingredient = {
-  id: string; name: string; category: string; brand: string; supplier: string; lastImport: string;
+  id: string; name: string; category: string; subcategory?: string; brand: string; supplier: string; lastImport: string;
   buyUnit: string; useUnit: string; ratio: number; buyPrice: number; stock: number; minStock: number; active: boolean;
 };
 export type PrepItem = { ingredientId: string; qty: number };

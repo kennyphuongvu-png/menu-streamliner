@@ -7,7 +7,7 @@ import { useEffect, useState, type ComponentType } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CogsSection, IngredientsSection, PnlSection, PosSection, PrepsSection, RecipesSection, StocktakeSection } from "@/components/fnb-sections";
+import { CogsSection, IngredientsSection, PnlSection, PosSection, PrepsSection, StocktakeSection } from "@/components/fnb-sections";
 import { EndOfDaySection, SettingsSection, SuperAdminSection } from "@/components/fnb-admin-sections";
 import { StockSlipsSection } from "@/components/stock-slips-section";
 import { RecipeFormulasSection } from "@/components/recipe-formulas-section";
@@ -75,7 +75,6 @@ function Shell({ s }: { s: Session }) {
     ] },
     { label: "Bán thành phẩm", icon: PackageCheck, item: { key: "preps", label: "Bán thành phẩm", icon: PackageCheck, view: PrepsSection } },
     { label: "Món & Công thức", icon: ChefHat, children: [
-      { key: "goods", label: "Hàng hóa", icon: Utensils, view: RecipesSection },
       { key: "recipes", label: "Công thức", icon: ChefHat, view: RecipeFormulasSection },
     ] },
     { label: "Bảng giá vốn (COGS)", icon: FileSpreadsheet, item: { key: "cogs", label: "Bảng giá vốn (COGS)", icon: FileSpreadsheet, view: CogsSection, premium: true } },

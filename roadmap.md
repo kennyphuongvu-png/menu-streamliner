@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Replace ingredient category cards with dynamic editable filters and a compact table.
+- [ ] Remove Goods navigation and add dynamic recipe-group filters to Formulas.
+- [ ] Verify category creation, rename/delete, recipe filtering and formula save/read-back.
+
 - [x] Convert sidebar groups to collapsed dropdowns with the requested main items.
 - [x] Separate stock slips from the unchanged stocktake screen; support creating slips.
 - [x] Keep goods listing and add a separate editable formula/cost screen.

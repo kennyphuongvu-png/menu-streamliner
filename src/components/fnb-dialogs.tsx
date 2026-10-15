@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { fmtQty, ingUnitCost, prepBatchCost, recipeCost, margin, uid, vnd, type Ingredient, type Movement, type Prep, type Recipe } from "@/lib/fnb-calc";
 import { INGREDIENT_CATEGORIES, useFnb } from "@/lib/fnb-store";
+import { ingredientGroup } from "@/lib/fnb-groups";
 import { cn } from "@/lib/utils";
 
 export const inputCls = "h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -20,9 +21,9 @@ type DialogProps<T> = { open: boolean; onOpenChange: (o: boolean) => void; initi
 const emptyIngredient = (): Ingredient => ({ id: uid(), name: "", category: "Khác", brand: "", supplier: "", lastImport: "", buyUnit: "Chai", useUnit: "ml", ratio: 1000, buyPrice: 0, stock: 0, minStock: 0, active: true });
 
 export function IngredientDialog({ open, onOpenChange, initial }: DialogProps<Ingredient>) {
-  const { upsertIngredient } = useFnb();
+  const { upsertIngredient, ingredientGroups } = useFnb();
   const [f, setF] = useState<Ingredient>(emptyIngredient);
-  useEffect(() => { if (open) setF(initial ?? emptyIngredient()); }, [open, initial]);
+  useEffect(() => { if (open) setF(initial ? { ...initial, subcategory: ingredientGroup(initial) } : { ...emptyIngredient(), subcategory: "Khác" }); }, [open, initial]);
   const set = <K extends keyof Ingredient>(k: K, v: Ingredient[K]) => setF((x) => ({ ...x, [k]: v }));
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,7 +31,7 @@ export function IngredientDialog({ open, onOpenChange, initial }: DialogProps<In
         <DialogHeader><DialogTitle>{initial ? "Sửa nguyên liệu" : "Thêm nguyên liệu"}</DialogTitle><DialogDescription>Quy đổi thông minh từ đơn vị mua sang đơn vị dùng để tính giá vốn chính xác.</DialogDescription></DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Tên nguyên liệu" className="sm:col-span-2"><input className={inputCls} value={f.name} onChange={(e) => set("name", e.target.value)} /></Field>
-          <Field label="Danh mục"><select className={inputCls} value={f.category} onChange={(e) => set("category", e.target.value)}>{INGREDIENT_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></Field>
+          <Field label="Nhóm con"><select className={inputCls} value={f.subcategory ?? "Khác"} onChange={(e) => set("subcategory", e.target.value)}>{ingredientGroups.map((c) => <option key={c}>{c}</option>)}</select></Field>
           <Field label="Thương hiệu"><input className={inputCls} value={f.brand} onChange={(e) => set("brand", e.target.value)} /></Field>
           <Field label="Nhà cung cấp"><input className={inputCls} value={f.supplier} onChange={(e) => set("supplier", e.target.value)} /></Field>
           <Field label="Ngày nhập gần nhất"><input type="date" className={inputCls} value={f.lastImport} onChange={(e) => set("lastImport", e.target.value)} /></Field>
@@ -99,7 +100,7 @@ export function PrepDialog({ open, onOpenChange, initial }: DialogProps<Prep>) {
 const emptyRecipe = (): Recipe => ({ id: uid(), name: "", group: "Cà phê", brand: "Bếp Số", size: "M", price: 0, packaging: 3500, items: [], brewTime: "", tools: "", steps: [], active: true });
 
 export function RecipeDialog({ open, onOpenChange, initial }: DialogProps<Recipe>) {
-  const { data, upsertRecipe } = useFnb();
+  const { data, upsertRecipe, recipeGroups, addGroup } = useFnb();
   const [f, setF] = useState<Recipe>(emptyRecipe);
   useEffect(() => { if (open) setF(initial ?? emptyRecipe()); }, [open, initial]);
   const cost = recipeCost(f, data);
@@ -110,7 +111,7 @@ export function RecipeDialog({ open, onOpenChange, initial }: DialogProps<Recipe
         <DialogHeader><DialogTitle>{initial ? "Sửa món" : "Thêm món"}</DialogTitle><DialogDescription>Giá vốn tự tính từ thành phần và chi phí bao bì.</DialogDescription></DialogHeader>
         <div className="grid gap-4 sm:grid-cols-4">
           <Field label="Tên món" className="sm:col-span-2"><input className={inputCls} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
-          <Field label="Danh mục"><input className={inputCls} value={f.group} onChange={(e) => setF({ ...f, group: e.target.value })} /></Field>
+          <Field label="Nhóm món"><input list="recipe-group-options" className={inputCls} value={f.group} onChange={(e) => setF({ ...f, group: e.target.value })} /><datalist id="recipe-group-options">{recipeGroups.map((g) => <option key={g} value={g} />)}</datalist></Field>
           <Field label="Size"><input className={inputCls} value={f.size} onChange={(e) => setF({ ...f, size: e.target.value })} /></Field>
           <Field label="Thương hiệu"><input className={inputCls} value={f.brand} onChange={(e) => setF({ ...f, brand: e.target.value })} /></Field>
           <Field label="Giá bán (₫)"><input type="number" min={0} className={inputCls} value={f.price} onChange={(e) => setF({ ...f, price: num(e.target.value) })} /></Field>

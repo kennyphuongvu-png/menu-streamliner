@@ -9,7 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { STOCK_GROUPS, stockGroup, stocktakeTotal, fmtQty, ingUnitCost, margin, money, prepBatchCost, prepUnitCost, recipeCost, uid, vnd, type Ingredient, type PayMethod, type Prep, type Recipe, type Sale } from "@/lib/fnb-calc";
+import { stocktakeTotal, fmtQty, ingUnitCost, margin, money, prepBatchCost, prepUnitCost, recipeCost, uid, vnd, type Ingredient, type PayMethod, type Prep, type Recipe, type Sale } from "@/lib/fnb-calc";
+import { ingredientGroup } from "@/lib/fnb-groups";
+import { GroupFilters } from "@/components/group-filters";
 import { downloadXlsx, readSheetRows } from "@/lib/fnb-export";
 import { INGREDIENT_CATEGORIES, useFnb } from "@/lib/fnb-store";
 import { cn } from "@/lib/utils";
@@ -30,7 +32,8 @@ export function IngredientsSection() {
   const [edit, setEdit] = useState<Ingredient | undefined>();
   const [dlg, setDlg] = useState(false);
   const [mv, setMv] = useState(false);
-  const visible = data.ingredients.filter((i) => (i.active || showInactive) && (cat === "Tất cả" || i.category === cat) && i.name.toLowerCase().includes(q.toLowerCase()));
+  const available = data.ingredients.filter((i) => (i.active || showInactive) && i.name.toLowerCase().includes(q.toLowerCase()));
+  const visible = available.filter((i) => cat === "Tất cả" || ingredientGroup(i) === cat);
   const exportXlsx = () => {
     const m = monthKey(today());
     const name = (kind: string, id: string) => (kind === "ing" ? data.ingredients.find((i) => i.id === id)?.name : data.preps.find((p) => p.id === id)?.name) ?? id;
@@ -43,27 +46,27 @@ export function IngredientsSection() {
   return (
     <section className="animate-rise-in space-y-5">
       <PageIntro title="Nguyên liệu & Kho" description="Tồn kho theo đơn vị dùng, cảnh báo khi chạm mức tối thiểu." action={<div className="no-print flex flex-wrap gap-2"><Button variant="outline" onClick={() => setMv(true)}><ArrowDownUp className="size-4" /> Nhập/Xuất kho</Button><Button variant="outline" onClick={exportXlsx}><Download className="size-4" /> Tải chi tiết kho (.xlsx)</Button><Button onClick={() => { setEdit(undefined); setDlg(true); }}><Plus className="size-4" /> Thêm nguyên liệu</Button></div>} />
-      <StockGroupCards />
+      <GroupFilters kind="ingredient" value={cat} onChange={setCat} count={(g) => available.filter((i) => g === "Tất cả" || ingredientGroup(i) === g).length} />
       <div id="management-print-area" className="overflow-hidden rounded-md border border-border bg-card shadow-sm">
         <div className="print-heading hidden"><h1>Danh sách nguyên liệu</h1><p>Bếp Số · Dữ liệu đang hiển thị</p></div>
         <div className="no-print space-y-3 border-b border-border px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row"><CategorySelect value={cat} options={["Tất cả", ...INGREDIENT_CATEGORIES]} onChange={setCat} /><div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm nguyên liệu..." className={cn(inputCls, "pl-9 sm:w-64")} /></div></div>
+            <div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><input aria-label="Tìm nguyên liệu" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm nguyên liệu..." className={cn(inputCls, "pl-9 sm:w-64")} /></div>
             <div className="flex items-center gap-3"><InactiveToggle checked={showInactive} onChange={setShowInactive} /><Button variant="outline" size="sm" onClick={() => window.print()}><Printer className="size-4" /> In</Button></div>
           </div>
         </div>
         <Table>
-          <TableHeader><TableRow><TableHead>Nguyên liệu</TableHead><TableHead>Thương hiệu / NCC</TableHead><TableHead>Quy đổi</TableHead><TableHead>Giá vốn/đv dùng</TableHead><TableHead>Tồn kho</TableHead><TableHead className="no-print text-right">Thao tác</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Tên nguyên liệu</TableHead><TableHead>Nhóm con</TableHead><TableHead className="text-right">Số lượng tồn</TableHead><TableHead>Đơn vị tính</TableHead><TableHead className="text-right">Giá vốn nhập</TableHead><TableHead className="no-print text-right">Thao tác</TableHead></TableRow></TableHeader>
           <TableBody>
             {visible.length === 0 && <TableRow><TableCell colSpan={6} className="py-10 text-center text-muted-foreground">Không có nguyên liệu phù hợp.</TableCell></TableRow>}
             {visible.map((i) => {
               const low = i.active && i.stock <= i.minStock;
               return <TableRow key={i.id} className={cn(!i.active && "opacity-55")}>
-                <TableCell><p className="font-semibold">{i.name}</p><p className="text-xs text-muted-foreground">{i.category}{!i.active && " · Đã ẩn"}</p></TableCell>
-                <TableCell><p className="text-sm">{i.brand || "—"}</p><p className="text-xs text-muted-foreground">{i.supplier}{i.lastImport && ` · nhập ${new Date(i.lastImport).toLocaleDateString("vi-VN")}`}</p></TableCell>
-                <TableCell className="text-sm">1 {i.buyUnit} = {fmtQty(i.ratio)} {i.useUnit}<p className="text-xs text-muted-foreground">{vnd(i.buyPrice)}/{i.buyUnit}</p></TableCell>
-                <TableCell className="font-semibold">{fmtQty(ingUnitCost(i))} ₫/{i.useUnit}</TableCell>
-                <TableCell><span className={cn("inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-bold", low ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success")}>{low && <TriangleAlert className="size-3.5" />}{fmtQty(i.stock)} {i.useUnit}</span><p className="mt-1 text-xs text-muted-foreground">Tối thiểu {fmtQty(i.minStock)}</p></TableCell>
+                <TableCell><p className="font-semibold">{i.name}</p><p className="text-xs text-muted-foreground">{i.brand}{!i.active && " · Đã ẩn"}</p></TableCell>
+                <TableCell className="text-sm">{ingredientGroup(i)}</TableCell>
+                <TableCell className="text-right"><span className={cn("inline-flex items-center gap-1 text-sm font-bold", low ? "text-destructive" : "text-foreground")}>{low && <TriangleAlert className="size-3.5" />}{fmtQty(i.stock)}</span></TableCell>
+                <TableCell>{i.useUnit}</TableCell>
+                <TableCell className="text-right"><p className="font-semibold">{vnd(i.buyPrice)}/{i.buyUnit}</p><p className="text-xs text-muted-foreground">{fmtQty(ingUnitCost(i))} ₫/{i.useUnit}</p></TableCell>
                 <TableCell className="no-print text-right"><Button variant="ghost" size="icon" aria-label={`Sửa ${i.name}`} onClick={() => { setEdit(i); setDlg(true); }}><Pencil className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={i.active ? `Ẩn ${i.name}` : `Hiện ${i.name}`} onClick={() => upsertIngredient({ ...i, active: !i.active })}>{i.active ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</Button></TableCell>
               </TableRow>;
             })}
@@ -310,16 +313,6 @@ export function StocktakeSection() {
 
 function CategorySelect({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   return <select aria-label="Chọn nhóm" value={value} onChange={(e) => onChange(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm font-medium outline-none focus:ring-2 focus:ring-ring sm:w-48">{options.map((o) => <option key={o} value={o}>{o}</option>)}</select>;
-}
-
-function StockGroupCards() {
-  const { data } = useFnb();
-  return <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">{STOCK_GROUPS.map((g) => {
-    const items = data.ingredients.filter((i) => i.active && stockGroup(i) === g);
-    const low = items.filter((i) => i.stock <= i.minStock).length;
-    const value = items.reduce((s, i) => s + ingUnitCost(i) * i.stock, 0);
-    return <div key={g} className="rounded-md border border-border bg-card p-3 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{g}</p><p className="mt-1 font-display text-2xl font-bold">{items.length}</p><p className="text-xs text-muted-foreground">{vnd(value)}</p>{low > 0 && <p className="mt-1 text-xs font-semibold text-destructive">{low} sắp hết</p>}</div>;
-  })}</div>;
 }
 
 /* ---------------- Bán hàng (POS) ---------------- */
